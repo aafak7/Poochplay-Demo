@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -50,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements BleCallBacks {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        startBluetooth(true);
         // TODO: 16-11-2021 Enable GPS/Location for access bluetooth data. for detail check blog. https://developer.android.com/guide/topics/connectivity/bluetooth/permissions
         enableLoc();
 
@@ -72,6 +74,24 @@ public class MainActivity extends AppCompatActivity implements BleCallBacks {
 
             DataManager.getInstance().deviceConnect(lstDevices.get(position));
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        startBluetooth(false);
+    }
+
+    private boolean startBluetooth(boolean enable) {
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        boolean isEnabled = bluetoothAdapter.isEnabled();
+        if (enable && !isEnabled) {
+            return bluetoothAdapter.enable();
+        } else if (!enable && isEnabled) {
+            return bluetoothAdapter.disable();
+        }
+        // No need to change bluetooth state
+        return true;
     }
 
     @Override
