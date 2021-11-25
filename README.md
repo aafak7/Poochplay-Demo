@@ -86,7 +86,11 @@ here **getapplication()** direct instance use for bluetooth method initializing.
     public void connectSuccess(String macAddress) {
         Log.e(TAG, "Connect Successfully: ");
     }
-
+    
+    @Override
+    public void getDeviceData(String deviceData) {
+        Log.e(TAG, "getDevicePercentage: " + deviceData);
+    }
 
 For using methods into the app to start scanning bluetooth on any click event or start activity :
 
