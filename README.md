@@ -114,6 +114,14 @@ After successfully connectting with ble device, We will get the callback into fo
     }
   
   
+## Andorid Required Permission
+    
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    
 ## Version 0.0.1
 
 The BLE library v 0.0.1 is supported.
