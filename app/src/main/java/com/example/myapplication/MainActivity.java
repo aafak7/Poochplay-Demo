@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements BleCallBacks {
     int REQUEST_CHECK_SETTINGS = 100;
     Button btnScan;
     TextView tvSteps, tvBatteryPercentage;
-    private static String[] PERMISSIONS_LOCATION = {android.Manifest.permission.ACCESS_FINE_LOCATION};
+    private static String[] PERMISSIONS_LOCATION = {android.Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
     private ListView listView;
     private List<BluetoothDevice> lstDevices = new ArrayList<>();
     private List<String> lstDevicesName = new ArrayList<>();
@@ -127,6 +128,11 @@ public class MainActivity extends AppCompatActivity implements BleCallBacks {
     public void getDevicePercentage(String batteryPercentage) {
         tvBatteryPercentage.setText("Battery " + batteryPercentage);
         Log.e(TAG, "getDevicePercentage: " + batteryPercentage);
+    }
+
+    @Override
+    public void getDeviceData(String deviceData) {
+        Log.e(TAG, "getDevicePercentage: " + deviceData);
     }
 
     @Override
