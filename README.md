@@ -64,12 +64,12 @@ Put below code in your class
   
   in oncreate
   
-   mBluetoothLeService = Constant.bleService;
+     mBluetoothLeService = Constant.bleService;
    
    
    for connect ble device.
    
-   mBluetoothLeService.connect(mDeviceAddress);
+     mBluetoothLeService.connect(mDeviceAddress);
    
    
    Registered reciever in onstart method
@@ -82,7 +82,7 @@ Put below code in your class
 
 Initialize method in oncreate 
 
- ProtocolHanderManager.TimerStart();
+        ProtocolHanderManager.TimerStart();
         SysHanderManager.TimerStart();
         BleDecodeData.initializeAlarmInfo();
         BleDecodeRtData.sethandler(datahandler);
