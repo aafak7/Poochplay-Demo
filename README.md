@@ -36,87 +36,257 @@ implementation 'com.github.Siyatech1808:ble-pp:0.0.1'
 
 ## How to Use this module after seting up all gradle.
 
-First we need to Initialize SDK into activity oncreate method, And for getting call back of every method, We need to implement **BleCallBacks**
+First bind service and evaluate in Application class.
 
-    DataManager.getInstance().setApplication(getApplication(), this);
+        PoochPlayApplication.context = getApplicationContext();
+        Constant.appcontext = getApplicationContext();
+        Log.e(TAG,"on create called");
+        Intent gattServiceIntent = new Intent(this, BleService.class);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        if (instance == null) {
+            instance = this;
+        }
 
-here **getapplication()** direct instance use for bluetooth method initializing. and **this** keyword is used to get call backs of methods after implementing **BleCallBacks**.
+Registered service in AndroidMainfest.xml
 
-    @Override
-    public void scanStart() {
-       Log.e(TAG, "Scan Start: ");
+        <service
+            android:name="com.amit.poochplayble.BleService"
+            android:enabled="true" />
+           
+Put below code in your class
+
+    public BleService mBluetoothLeService;
+    public BroadcastReceiver broadcastReceiver;
+    public Funtion funtion = new Funtion();
+    private final Handler getOldData = new Handler();
+    private final Handler countRealSteps = new Handler();
+ 
+  
+  
+  in oncreate
+  
+   mBluetoothLeService = Constant.bleService;
+   
+   
+   for connect ble device.
+   
+   mBluetoothLeService.connect(mDeviceAddress);
+   
+   
+   Registered reciever in onstart method
+   
+      @Override
+    protected void onStart() {
+        super.onStart();
+        registerReceiver(broadcastReceiver, makeGattUpdateIntentFilter());
     }
 
-    @Override
-    public void scanEnd() {
-        Log.e(TAG, "Scan end: ");
-    }
+Initialize method in oncreate 
 
-    @Override
-    public void getDeviceList(List<BluetoothDevice> bluetoothDeviceList) {
-        Log.e(TAG, "Device List: " + bluetoothDeviceList.size);
-    }
+ ProtocolHanderManager.TimerStart();
+        SysHanderManager.TimerStart();
+        BleDecodeData.initializeAlarmInfo();
+        BleDecodeRtData.sethandler(datahandler);
+        broadcastReceiver = new BleReceiver(ConnectHandler);
+        
+        
+For getting current moves use datahandler method below
 
-    @Override
-    public void getDevicePercentage(String batteryPercentage) {
-        Log.e(TAG, "Device Percentage: " + batteryPercentage);
-    }
+ Handler datahandler = new Handler(Looper.getMainLooper()) {
+        @SuppressLint("LongLogTag")
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
 
-    @Override
-    public void getTotalCalories(String totalCalories) {
-        Log.e(TAG, "getTotalCalories: " + totalCalories);
-    }
+            Log.e(TAG,"data handler");
+                try {
+                    if (msg.what == 1) {
+                        Calendar cal = Calendar.getInstance();
+                        int second = cal.get(Calendar.SECOND);
+                        int minute = cal.get(Calendar.MINUTE);
+                        int hour = cal.get(Calendar.HOUR);
 
-    @Override
-    public void getTotalSteps(String totalSteps) {
-        Log.e(TAG, "getTotalSteps: " + totalSteps);
-    }
+                        Log.e("total step", Array.RtCtrlData.totalSteps+"=====");
+                        if (Array.RtCtrlData.totalSteps > 0) {
+                            Log.d("TAG", "handleMessage: second " + second);
 
-    @Override
-    public void startConnect() {
-        Log.e(TAG, "startConnect: ");
-    }
 
-    @Override
-    public void connectFailed(BluetoothDevice device) {
-        Log.e(TAG, "Connection failed: ");
-    }
+                            tvSteps.setText("Total steps :-"+Array.RtCtrlData.totalSteps);
 
-    @Override
-    public void connectSuccess(String macAddress) {
-        Log.e(TAG, "Connect Successfully: ");
+                            }
+                        }
+                    if (msg.what == 2) {
+                        String dataString = msg.obj.toString().replace(" ", "")
+                                .toUpperCase();
+                        byte[] data = Util.hexStringToByte(dataString);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+        }
+    };
+
+
+Put intent filter method in your class
+
+  private static IntentFilter makeGattUpdateIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BleService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BleService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BleService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BleService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction("com.wrist.ble.SUCCESSSETINFO");
+        intentFilter.addAction("com.wrist.ble.NRTDATAEND");
+        return intentFilter;
     }
     
-    @Override
-    public void getDeviceData(String deviceData) {
-        Log.e(TAG, "getDevicePercentage: " + deviceData);
-    }
+For tracker connectivity use connect handler below code.
 
-For using methods into the app to start scanning bluetooth on any click event or start activity :
+Received message 
+1 represent service discovered.
+2 represents data received
+3 represents connected
+4 represents disconnected
+5 represents that new protocol device has completed necessary
+6 data syncing completed
 
-    DataManager.getInstance().scan();
 
-After scannig all the nearyby devices, getting callback into **getDeviceList(List<BluetoothDevice> bluetoothDeviceList)** method. Clicking on any search device, We need to connect poochplay ble device with the application. We need to use this method : 
-  
-    DataManager.getInstance().deviceConnect(lstDevices.get(position)); // lstDevices.get(position) =  searched poochplay bluetooth device.
-  
-After successfully connectting with ble device, We will get the callback into following methods with the device battery percentage, total steps & total calories.
-  
-    @Override
-    public void getDevicePercentage(String batteryPercentage) {
-        Log.e(TAG, "getDevicePercentage: " + batteryPercentage);
-    }
+ @SuppressLint("HandlerLeak")
+    private Handler ConnectHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.arg1) {
+                case 2:
+                  
+                    try {
+                        if (Array.DecideProtocol == 1) {
+                            BleData bledata = (BleData) msg.getData().getSerializable("data");
+                            String uuid = bledata.getUuid();
+                            String value = bledata.getValue();
+                            String dataString = value.toString().replace(" ", "")
+                                    .toUpperCase();
+                            byte[] data = Util.hexStringToByte(dataString);
+                            if (uuid.equals(SampleGattAttributes.NOTIFY_UUID)) {
+                                BleTransLayer.TranslayerRecievePkt(data);
+                            } else {
+                                Message message = new Message();
+                                message.what = 2;
+                                message.obj = value;
+                                datahandler.sendMessage(message);
+                            }
+                        } else if (Array.DecideProtocol == 2) {
+                            BleData bledata = (BleData) msg.getData().getSerializable("data");
+                            String uuid = bledata.getUuid();
+                            String value = bledata.getValue();
+                            Nrtanalysis.setdata(value, mBluetoothLeService, datahandler);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-    @Override
-    public void getTotalCalories(String totalCalories) {
-        Log.e(TAG, "getTotalCalories: " + totalCalories);
-    }
+                    return;
+                case 1:
+                  
+                    try {
+                        funtion.setdecideProtocol();
+                        if (Array.DecideProtocol == 1) {
+                            boolean issuccess = funtion.opennewdecideProtocol();
+                            BleHelper.checkinfo();
+                        } else if (Array.DecideProtocol == 2) {
+                            boolean issuccess = funtion.openoldrtdecideProtocol();
+                        }
 
-    @Override
-    public void getTotalSteps(String totalSteps) {
-        Log.e(TAG, "getTotalSteps: " + totalSteps);
-    }
-  
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    return;
+                case 3:
+
+                    mProgressHUD.dismiss();
+
+                    btnConnect.setText(" Connected- Tap here to disconnect");
+
+
+                    if (mLeDevicesConnected != null) {
+                        for (BluetoothDevice device : mLeDevicesConnected) {
+                            if (device != null && device.getAddress().equals(mDeviceAddress))
+                                mDevice = device;
+                        }
+
+                        new BluetoothTask(getApplicationContext()).execute();
+                    }
+
+
+                        try {
+
+
+                            countRealSteps.postDelayed(countRealStepsHandler, 3000);
+
+                            //TODO battery indication
+                          /*  Intent gattServiceIntent = new Intent(getContext(), BluetoothLeService.class);
+                            getActivity().startService(gattServiceIntent);
+                            getActivity().bindService(gattServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);*/
+                            //insertConnectingData1();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+
+                    return;
+                case 4:
+
+                    mProgressHUD.dismiss();
+
+                    btnConnect.setText("Disconnected - Tap here to connect");
+                    try {
+                        Log.e(TAG, "connect handler disconnect");
+
+
+                        //    mBluetoothLeService.close();
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                case 5:
+                   
+                    try {
+                        WaterSetInfo info = null;
+//				BleHelper.SetUTC();
+//				BleHelper.setUserSleep();
+//				BleHelper.setUserBodyInfo();
+                        //          BleHelper.RTSwitch();
+//				BleHelper.setAlarmPlan();
+                        BleHelper.setWaterInfo(info);
+//				BleHelper.setMoveInfo();
+//				BleHelper.setRemindInfo();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                case 6:
+
+                   
+                   Log.e(TAG,Array.liststep.toString());
+
+                   for (int i=0;i<Array.liststep.size();i++) {
+                       StepData stepData=Array.liststep.get(i);
+                       lstDevicesName.add(stepData.getSteptime() + " - " + stepData.getStepdata());
+                   }
+
+                    btnOldData.setText("DATA RECEIVED");
+                    ListAdapter adapter = new ArrayAdapter<>(TrackerActivity.this, android.R.layout.simple_list_item_1, lstDevicesName);
+                    listView.setAdapter(adapter);
+
+
+                    return;
+
+            }
+        }
+    };
+
+
   
 ## Andorid Required Permission
     
