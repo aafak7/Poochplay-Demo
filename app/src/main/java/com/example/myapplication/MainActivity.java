@@ -1,11 +1,26 @@
 package com.example.myapplication;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.location.LocationManagerCompat;
+
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
+import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -13,238 +28,238 @@ import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
-import com.amit.poochplayble.BleCallBacks;
-import com.amit.poochplayble.DataManager;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.content.ContentValues.TAG;
+public class MainActivity extends AppCompatActivity implements DialogInterface.OnCancelListener {
 
-public class MainActivity extends AppCompatActivity implements BleCallBacks {
 
-    private GoogleApiClient googleApiClient;
-    int REQUEST_CHECK_SETTINGS = 100;
-    Button btnScan;
-    TextView tvSteps, tvBatteryPercentage;
-    private static String[] PERMISSIONS_LOCATION = {android.Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
-    private ListView listView;
     private List<BluetoothDevice> lstDevices = new ArrayList<>();
     private List<String> lstDevicesName = new ArrayList<>();
+    private ListView listView;
+    private String deviseList = "";
+    private TextView tvScanning, tvBatteryPercentage, tvSteps;
+    private Button btnScan;
+
+
+    private BluetoothAdapter mBluetoothAdapter;
+
+    private static final int REQUEST_ENABLE_BT = 1;
+    private Handler mHandler;
+    private BluetoothLeScanner mLEScanner;
+
+    private static final long SCAN_PERIOD = 10000;
+    private List<ScanFilter> filters;
+    private ScanSettings settings;
+
+
+    public static String mDeviceAddress;
+
+    ListAdapter adapter;
+
+    private final static String BATTERY_UUID = "0000180f-0000-1000-8000-00805f9b34fb";
+    private final static String BATTERY_LEVEL = "00002a19-0000-1000-8000-00805f9b34fb";
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        startBluetooth(true);
-        // TODO: 16-11-2021 Enable GPS/Location for access bluetooth data. for detail check blog. https://developer.android.com/guide/topics/connectivity/bluetooth/permissions
-        enableLoc();
+        locationPermission();
 
-        // TODO: 16-11-2021 After give all the access of GPS & runtime location permission, here we are initialising our sdk.
-        DataManager.getInstance().setApplication(getApplication(), this);
-        tvSteps = findViewById(R.id.tvSteps);
-        tvBatteryPercentage = findViewById(R.id.tvBatteryPercentage);
-        btnScan = findViewById(R.id.btnScan);
-        btnScan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO: 16-11-2021 Bluetooth scan method.
-                DataManager.getInstance().scan();
-            }
-        });
+
 
         listView = findViewById(R.id.listView);
+        tvScanning = findViewById(R.id.tvScanning);
+        tvBatteryPercentage = findViewById(R.id.tvBatteryPercentage);
+        tvSteps = findViewById(R.id.tvSteps);
+        btnScan = findViewById(R.id.btnScan);
+
+
+        ListAdapter adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, lstDevicesName);
+        listView.setAdapter(adapter);
+
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+
+        // Check whether the Bluetooth device
+
+
+        mHandler = new Handler();
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
+
+
+        checkLocationOn();
+
+
+        // Initializes list view adapter.
+
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
 
-            DataManager.getInstance().deviceConnect(lstDevices.get(position));
+
+            BluetoothDevice device = lstDevices.get(position);
+            mDeviceAddress=device.getAddress();
+            Intent intent= new Intent(this, TrackerActivity.class);
+            intent.putExtra("device",mDeviceAddress);
+            startActivity(intent);
         });
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        startBluetooth(false);
-    }
-
-    private boolean startBluetooth(boolean enable) {
-        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        boolean isEnabled = bluetoothAdapter.isEnabled();
-        if (enable && !isEnabled) {
-            return bluetoothAdapter.enable();
-        } else if (!enable && isEnabled) {
-            return bluetoothAdapter.disable();
-        }
-        // No need to change bluetooth state
-        return true;
-    }
-
-    @Override
-    public void scanStart() {
-        // TODO: 16-11-2021 Bluetooth Scanning start callback.
-        lstDevicesName = new ArrayList<>();
-        ListAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, lstDevicesName);
-        listView.setAdapter(adapter);
-    }
-
-    @Override
-    public void scanEnd() {
-        // TODO: 16-11-2021 Bluetooth Scanning end callback.
-    }
-
-    @Override
-    public void getDeviceList(List<BluetoothDevice> bluetoothDeviceList) {
-        // TODO: 16-11-2021 Get poochplay device list here.
-        if (bluetoothDeviceList != null && bluetoothDeviceList.size() > 0) {
-//            DataManager.getInstance().deviceConnect(bluetoothDeviceList.get(0));
-            Log.e(TAG, "getDeviceList: " + bluetoothDeviceList.size());
-            lstDevices = new ArrayList<>(bluetoothDeviceList);
-            lstDevicesName = new ArrayList<>();
-            for (BluetoothDevice device : lstDevices) {
-                lstDevicesName.add(device.getName() + "\n" + device.getAddress());
-            }
-            ListAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, lstDevicesName);
-            listView.setAdapter(adapter);
-        }
-    }
-
-    @Override
-    public void getDevicePercentage(String batteryPercentage) {
-        tvBatteryPercentage.setText("Battery " + batteryPercentage);
-        Log.e(TAG, "getDevicePercentage: " + batteryPercentage);
-    }
-
-    @Override
-    public void getDeviceData(String deviceData) {
-        Log.e(TAG, "getDevicePercentage: " + deviceData);
-    }
-
-    @Override
-    public void getTotalCalories(String totalCalories) {
-        tvSteps.append("\nTotal Calories: " + totalCalories);
-        Log.e(TAG, "getTotalCalories: " + totalCalories);
-    }
-
-    @Override
-    public void getTotalSteps(String totalSteps) {
-        tvSteps.setText("TotalSteps: " + totalSteps);
-        Log.e(TAG, "getTotalSteps: " + totalSteps);
-    }
-
-    @Override
-    public void startConnect() {
-        Toast.makeText(this, "startConnect", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void connectFailed(BluetoothDevice device) {
-        Toast.makeText(this, "connection Failed " + device, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void connectSuccess(String macAddress) {
-        Toast.makeText(this, "Connect Success.", Toast.LENGTH_SHORT).show();
-    }
 
 
-    private void enableLoc() {
-
-        if (googleApiClient == null) {
-            googleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(LocationServices.API)
-                    .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                        @Override
-                        public void onConnected(Bundle bundle) {
-
-                        }
-
-                        @Override
-                        public void onConnectionSuspended(int i) {
-                            googleApiClient.connect();
-                        }
-                    })
-                    .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                        @Override
-                        public void onConnectionFailed(ConnectionResult connectionResult) {
-
-                            Log.d("Location error", "Location error " + connectionResult.getErrorCode());
-                        }
-                    }).build();
-
-        }
-        googleApiClient.connect();
-
-        LocationRequest locationRequest = LocationRequest.create();
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(30 * 1000);
-        locationRequest.setFastestInterval(5 * 1000);
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(locationRequest);
-
-        builder.setAlwaysShow(true);
-
-        PendingResult<LocationSettingsResult> result =
-                LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
-        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+        btnScan.setVisibility(View.INVISIBLE);
+        btnScan.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onResult(LocationSettingsResult result) {
-                final Status status = result.getStatus();
-                switch (status.getStatusCode()) {
-                    case LocationSettingsStatusCodes.SUCCESS:
-                        locationPermission();
-                        break;
-                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                        try {
-                            // Show the dialog by calling startResolutionForResult(),
-                            // and check the result in onActivityResult().
-                            status.startResolutionForResult(MainActivity.this, REQUEST_CHECK_SETTINGS);
+            public void onClick(View view) {
 
-//                                finish();
-                        } catch (IntentSender.SendIntentException e) {
-                            // Ignore the error.
-                        }
-                        break;
-                }
+                lstDevicesName.clear();
+
+
+                checkLocationOn();
             }
         });
+
+
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CHECK_SETTINGS) {
+    private void locationPermission(){
+        ActivityResultLauncher<String[]> locationPermissionRequest =
+                registerForActivityResult(new ActivityResultContracts
+                                .RequestMultiplePermissions(), result -> {
+                            Boolean fineLocationGranted = result.getOrDefault(
+                                    Manifest.permission.ACCESS_FINE_LOCATION, false);
+                            Boolean coarseLocationGranted = result.getOrDefault(
+                                    Manifest.permission.ACCESS_COARSE_LOCATION,false);
+                            if (fineLocationGranted != null && fineLocationGranted) {
+                                // Precise location access granted.
+                                checkLocationOn();
+                            } else if (coarseLocationGranted != null && coarseLocationGranted) {
+                                // Only approximate location access granted.
+                                checkLocationOn();
+                            } else {
+                                // No location access granted.
+                            }
+                        }
+                );
 
-            if (resultCode == RESULT_OK) {
+// ...
 
-                Toast.makeText(getApplicationContext(), "GPS enabled", Toast.LENGTH_LONG).show();
-                locationPermission();
+// Before you perform the actual permission request, check whether your app
+// already has the permissions, and whether your app needs to show a permission
+// rationale dialog. For more details, see Request permissions.
 
-            } else {
+        locationPermissionRequest.launch(new String[] {
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+        });
 
-                enableLoc();
-            }
+    }
+
+    private void checkLocationOn() {
+        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        if (!LocationManagerCompat.isLocationEnabled(lm)) {
+            scanLeDevice(false);
+
+
+        } else {
+            scanLeDevice(true);
 
         }
     }
 
-    // TODO: 16-11-2021 Runtime Location permission request.
-    private void locationPermission() {
-        ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS_LOCATION, 101);
+
+    private void scanLeDevice(final boolean enable) {
+        try {
+            if (enable) {
+
+                mHandler.postDelayed(() -> {
+                    if (mLEScanner != null && mScanCallback != null &&
+                            mBluetoothAdapter.getState() == BluetoothAdapter.STATE_ON) {
+
+                        mLEScanner.stopScan(mScanCallback);
+
+                    }
+                }, SCAN_PERIOD);
+
+
+                if (mScanCallback != null && mLEScanner != null) {
+                    filters.add(new ScanFilter.Builder().setDeviceName("PoochPlay").build());
+
+                    if (mScanCallback != null)
+                        mLEScanner.startScan(filters, settings, mScanCallback);
+
+                } else if (mLEScanner == null && mScanCallback != null) {
+                    mLEScanner = mBluetoothAdapter.getBluetoothLeScanner();
+
+                    settings = new ScanSettings.Builder()
+                            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                            .build();
+
+                    filters = new ArrayList<>();
+                    filters.add(new ScanFilter.Builder().setDeviceName("PoochPlay").build());
+
+                    if (mScanCallback != null)
+                        mLEScanner.startScan(filters, settings, mScanCallback);
+                }
+            } else {
+                if (mScanCallback != null && mLEScanner != null) {
+                    mLEScanner.stopScan(mScanCallback);
+                }
+
+            }
+        } catch (Exception e) {
+        }
     }
+
+    private ScanCallback mScanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            BluetoothDevice btDevice;
+            btDevice = result.getDevice();
+
+
+            if (!deviseList.contains(btDevice.getAddress())) {
+                deviseList = deviseList.concat(result.getDevice().getName() + " - " + result.getDevice().getAddress() + "\n");
+
+                lstDevices.add(result.getDevice());
+                lstDevicesName.add(result.getDevice().getName() + " - " + result.getDevice().getAddress());
+
+                 adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, lstDevicesName);
+                listView.setAdapter(adapter);
+            }
+
+
+//            adapter.addDevice(btDevice);
+            Log.e("list",btDevice.getAddress());
+
+        }
+
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            for (ScanResult sr : results) {
+                Log.e("ScanResult - Results", sr.toString());
+            }
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            Log.e("Scan Failed", "Error Code: " + errorCode);
+        }
+    };
+
+
+    @Override
+    public void onCancel(DialogInterface dialogInterface) {
+
+    }
+
+
+
+
+
 }
