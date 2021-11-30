@@ -30,7 +30,7 @@ allprojects {
 
 Add this gradle dependency into the app gradle file.
 ```gradle
-implementation 'com.github.Siyatech1808:ble-pp:0.0.1'
+implementation 'com.github.aafak7:poochplay-ble:1.0.0'
 ```
 
 ## How to Use this module after seting up all gradle.
