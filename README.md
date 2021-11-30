@@ -252,18 +252,18 @@ Received message
                    
                     try {
                         WaterSetInfo info = null;
-//				BleHelper.SetUTC();
-//				BleHelper.setUserSleep();
-//				BleHelper.setUserBodyInfo();
-                        //          BleHelper.RTSwitch();
-//				BleHelper.setAlarmPlan();
+        //				BleHelper.SetUTC();
+        //				BleHelper.setUserSleep();
+        //				BleHelper.setUserBodyInfo();
+                            //          BleHelper.RTSwitch();
+         //				BleHelper.setAlarmPlan();
                         BleHelper.setWaterInfo(info);
-//				BleHelper.setMoveInfo();
-//				BleHelper.setRemindInfo();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return;
+        //				BleHelper.setMoveInfo();
+        //				BleHelper.setRemindInfo();
+                           } catch (Exception e) {
+                               e.printStackTrace();
+                        }
+                           return;
                 case 6:
 
                    
