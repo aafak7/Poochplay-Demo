@@ -5,12 +5,11 @@ The API is clean and easy to read.
 
 ## Features (Version 0.0.1)
 
-**DataManager** class provides the following features:
+**BleService** class provides the following features:
 
-1. Scan device.
-2. Fetching all nearby poochplay bluetooth devices.
+1. Get real time moves.
+2. Fetch all offline ble device data.
 3. Connecting with bluetooth devices.
-4. Poochplay device battery percentage, Total step counts, Total calories burn.
 
 ## Importing
 
