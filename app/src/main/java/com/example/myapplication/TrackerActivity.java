@@ -50,10 +50,6 @@ import com.amit.poochplayble.StepData;
 import com.amit.poochplayble.SysHanderManager;
 import com.amit.poochplayble.Util;
 import com.amit.poochplayble.WaterSetInfo;
-import com.clj.fastble.BleManager;
-import com.clj.fastble.callback.BleNotifyCallback;
-import com.clj.fastble.callback.BleReadCallback;
-import com.clj.fastble.exception.BleException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -108,8 +104,9 @@ public class TrackerActivity extends AppCompatActivity implements DialogInterfac
     public ArrayList<String> mLeDevices = new ArrayList<String>();
     public ArrayList<BluetoothDevice> mLeDevicesConnected = new ArrayList<BluetoothDevice>();
 
-    Button btnConnect;
+    Button btnConnect,btnOldData;
     ProgressHUD mProgressHUD;
+
 
 
     private Runnable countRealStepsHandler = new Runnable() {
@@ -165,12 +162,13 @@ public class TrackerActivity extends AppCompatActivity implements DialogInterfac
         mProgressHUD = ProgressHUD.show(TrackerActivity.this,"Connecting...", true,true,this);
 
 
-        findViewById(R.id.btn_old_data).setOnClickListener(new View.OnClickListener() {
+        btnOldData=findViewById(R.id.btn_old_data);
+        btnOldData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 if (lstDevicesName.isEmpty()){
-                    Toast.makeText(TrackerActivity.this,"Data not get yet!!",Toast.LENGTH_LONG).show();
+                    Toast.makeText(TrackerActivity.this,"Please wait !!",Toast.LENGTH_LONG).show();
                     return;
                 }
                 Intent intent=new Intent(TrackerActivity.this,AllTrackerDataActivity.class);
@@ -299,7 +297,6 @@ public class TrackerActivity extends AppCompatActivity implements DialogInterfac
         SysHanderManager.TimerStart();
         BleDecodeData.initializeAlarmInfo();
         BleDecodeRtData.sethandler(datahandler);
-
         broadcastReceiver = new BleReceiver(ConnectHandler);
         //   getActivity().registerReceiver(broadcastReceiver, makeGattUpdateIntentFilter());
     }
@@ -467,6 +464,7 @@ public class TrackerActivity extends AppCompatActivity implements DialogInterfac
                        lstDevicesName.add(stepData.getSteptime() + " - " + stepData.getStepdata());
                    }
 
+                    btnOldData.setText("DATA RECEIVED");
                     ListAdapter adapter = new ArrayAdapter<>(TrackerActivity.this, android.R.layout.simple_list_item_1, lstDevicesName);
                     listView.setAdapter(adapter);
 

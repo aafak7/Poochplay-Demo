@@ -100,8 +100,6 @@ public class PoochPlayApplication extends Application {
         Log.e(TAG,"on create called");
         Intent gattServiceIntent = new Intent(this, BleService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-
-
         if (instance == null) {
             instance = this;
         }

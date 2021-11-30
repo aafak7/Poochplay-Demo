@@ -45,7 +45,7 @@
     <Button
         android:id="@+id/btn_old_data"
         android:layout_width="match_parent"
-        android:text="Old data"
+        android:text="data"
         android:background="@color/purple_500"
         android:textColor="@color/white"
         android:layout_marginLeft="20dp"
