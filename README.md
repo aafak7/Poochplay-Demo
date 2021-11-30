@@ -54,11 +54,11 @@ Registered service in AndroidMainfest.xml
            
 Put below code in your class
 
-    public BleService mBluetoothLeService;
-    public BroadcastReceiver broadcastReceiver;
-    public Funtion funtion = new Funtion();
-    private final Handler getOldData = new Handler();
-    private final Handler countRealSteps = new Handler();
+       public BleService mBluetoothLeService;
+      public BroadcastReceiver broadcastReceiver;
+        public Funtion funtion = new Funtion();
+       private final Handler getOldData = new Handler();
+       private final Handler countRealSteps = new Handler();
  
   
   
@@ -128,20 +128,21 @@ For getting current moves use datahandler method below
 
 Put intent filter method in your class
 
-  private static IntentFilter makeGattUpdateIntentFilter() {
-        final IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BleService.ACTION_GATT_CONNECTED);
-        intentFilter.addAction(BleService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(BleService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(BleService.ACTION_DATA_AVAILABLE);
-        intentFilter.addAction("com.wrist.ble.SUCCESSSETINFO");
-        intentFilter.addAction("com.wrist.ble.NRTDATAEND");
-        return intentFilter;
-    }
+         private static IntentFilter makeGattUpdateIntentFilter() {
+             final IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(BleService.ACTION_GATT_CONNECTED);
+            intentFilter.addAction(BleService.ACTION_GATT_DISCONNECTED);
+            intentFilter.addAction(BleService.ACTION_GATT_SERVICES_DISCOVERED);
+             intentFilter.addAction(BleService.ACTION_DATA_AVAILABLE);
+             intentFilter.addAction("com.wrist.ble.SUCCESSSETINFO");
+            intentFilter.addAction("com.wrist.ble.NRTDATAEND");
+             return intentFilter;
+          }
     
 For tracker connectivity use connect handler below code.
 
 Received message 
+
 1 represent service discovered.
 2 represents data received
 3 represents connected
@@ -150,8 +151,8 @@ Received message
 6 data syncing completed
 
 
- @SuppressLint("HandlerLeak")
-    private Handler ConnectHandler = new Handler() {
+     @SuppressLint("HandlerLeak")
+       private Handler ConnectHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.arg1) {
