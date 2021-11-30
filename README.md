@@ -91,39 +91,38 @@ Initialize method in oncreate
         
 For getting current moves use datahandler method below
 
- Handler datahandler = new Handler(Looper.getMainLooper()) {
-        @SuppressLint("LongLogTag")
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
+             Handler datahandler = new Handler(Looper.getMainLooper()) {
+                   @SuppressLint("LongLogTag")
+                   @Override
+                 public void handleMessage(Message msg) {
+                     super.handleMessage(msg);
+                     Log.e(TAG,"data handler");
+                      try {
+                          if (msg.what == 1) {
+                              Calendar cal = Calendar.getInstance();
+                               int second = cal.get(Calendar.SECOND);
+                                int minute = cal.get(Calendar.MINUTE);
+                                int hour = cal.get(Calendar.HOUR);
 
-            Log.e(TAG,"data handler");
-                try {
-                    if (msg.what == 1) {
-                        Calendar cal = Calendar.getInstance();
-                        int second = cal.get(Calendar.SECOND);
-                        int minute = cal.get(Calendar.MINUTE);
-                        int hour = cal.get(Calendar.HOUR);
-
-                        Log.e("total step", Array.RtCtrlData.totalSteps+"=====");
-                        if (Array.RtCtrlData.totalSteps > 0) {
-                            Log.d("TAG", "handleMessage: second " + second);
+                                    Log.e("total step", Array.RtCtrlData.totalSteps+"=====");
+                                    if (Array.RtCtrlData.totalSteps > 0) {
+                                        Log.d("TAG", "handleMessage: second " + second);
 
 
-                            tvSteps.setText("Total steps :-"+Array.RtCtrlData.totalSteps);
+                                        tvSteps.setText("Total steps :-"+Array.RtCtrlData.totalSteps);
 
+                                        }
+                                    }
+                                if (msg.what == 2) {
+                                    String dataString = msg.obj.toString().replace(" ", "")
+                                            .toUpperCase();
+                                    byte[] data = Util.hexStringToByte(dataString);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        }
-                    if (msg.what == 2) {
-                        String dataString = msg.obj.toString().replace(" ", "")
-                                .toUpperCase();
-                        byte[] data = Util.hexStringToByte(dataString);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-        }
-    };
+                      }
+                     };
 
 
 Put intent filter method in your class
