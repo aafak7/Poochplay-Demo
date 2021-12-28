@@ -106,8 +106,7 @@ For getting current moves use datahandler method below
                                         }
                                     }
                                 if (msg.what == 2) {
-                                    String dataString = msg.obj.toString().replace(" ", "")
-                                            .toUpperCase();
+                                    String dataString = msg.obj.toString().replace(" ", "").toUpperCase();
                                     byte[] data = Util.hexStringToByte(dataString);
                                 }
                             } catch (Exception e) {
@@ -168,8 +167,7 @@ Received message
                             BleData bledata = (BleData) msg.getData().getSerializable("data");
                             String uuid = bledata.getUuid();
                             String value = bledata.getValue();
-                            String dataString = value.toString().replace(" ", "")
-                                    .toUpperCase();
+                            String dataString = value.toString().replace(" ", "").toUpperCase();
                             byte[] data = Util.hexStringToByte(dataString);
                             if (uuid.equals(SampleGattAttributes.NOTIFY_UUID)) {
                                 BleTransLayer.TranslayerRecievePkt(data);
@@ -217,7 +215,6 @@ Received message
                     return;
                     
                 case 5:
-                  
                     try {
                         WaterSetInfo info = null;
             //			BleHelper.SetUTC();
@@ -234,7 +231,6 @@ Received message
                         }
                            return;
                 case 6:
-                
                    for (int i=0;i<Array.liststep.size();i++) {
                        StepData stepData=Array.liststep.get(i);
                        lstDevicesName.add(stepData.getSteptime() + " - " + stepData.getStepdata());
