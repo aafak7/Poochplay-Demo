@@ -93,23 +93,16 @@ For getting current moves use datahandler method below
              Handler datahandler = new Handler(Looper.getMainLooper()) {
                    @SuppressLint("LongLogTag")
                    @Override
-                 public void handleMessage(Message msg) {
+                   public void handleMessage(Message msg) {
                      super.handleMessage(msg);
-                     Log.e(TAG,"data handler");
                       try {
                           if (msg.what == 1) {
                               Calendar cal = Calendar.getInstance();
                                int second = cal.get(Calendar.SECOND);
                                 int minute = cal.get(Calendar.MINUTE);
                                 int hour = cal.get(Calendar.HOUR);
-
-                                    Log.e("total step", Array.RtCtrlData.totalSteps+"=====");
                                     if (Array.RtCtrlData.totalSteps > 0) {
-                                        Log.d("TAG", "handleMessage: second " + second);
-
-
                                         tvSteps.setText("Total steps :-"+Array.RtCtrlData.totalSteps);
-
                                         }
                                     }
                                 if (msg.what == 2) {
@@ -128,12 +121,12 @@ Put intent filter method in your class
 
          private static IntentFilter makeGattUpdateIntentFilter() {
              final IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(BleService.ACTION_GATT_CONNECTED);
-            intentFilter.addAction(BleService.ACTION_GATT_DISCONNECTED);
-            intentFilter.addAction(BleService.ACTION_GATT_SERVICES_DISCOVERED);
+             intentFilter.addAction(BleService.ACTION_GATT_CONNECTED);
+             intentFilter.addAction(BleService.ACTION_GATT_DISCONNECTED);
+             intentFilter.addAction(BleService.ACTION_GATT_SERVICES_DISCOVERED);
              intentFilter.addAction(BleService.ACTION_DATA_AVAILABLE);
              intentFilter.addAction("com.wrist.ble.SUCCESSSETINFO");
-            intentFilter.addAction("com.wrist.ble.NRTDATAEND");
+             intentFilter.addAction("com.wrist.ble.NRTDATAEND");
              return intentFilter;
           }
     
@@ -154,8 +147,22 @@ Received message
         @Override
         public void handleMessage(Message msg) {
             switch (msg.arg1) {
+              case 1:
+                    try {
+                        funtion.setdecideProtocol();
+                        if (Array.DecideProtocol == 1) {
+                            boolean issuccess = funtion.opennewdecideProtocol();
+                            BleHelper.checkinfo();
+                        } else if (Array.DecideProtocol == 2) {
+                            boolean issuccess = funtion.openoldrtdecideProtocol();
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                    
                 case 2:
-                  
                     try {
                         if (Array.DecideProtocol == 1) {
                             BleData bledata = (BleData) msg.getData().getSerializable("data");
@@ -181,31 +188,10 @@ Received message
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
-                    return;
-                case 1:
-                  
-                    try {
-                        funtion.setdecideProtocol();
-                        if (Array.DecideProtocol == 1) {
-                            boolean issuccess = funtion.opennewdecideProtocol();
-                            BleHelper.checkinfo();
-                        } else if (Array.DecideProtocol == 2) {
-                            boolean issuccess = funtion.openoldrtdecideProtocol();
-                        }
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
                     return;
                 case 3:
-
                     mProgressHUD.dismiss();
-
                     btnConnect.setText(" Connected- Tap here to disconnect");
-
-
                     if (mLeDevicesConnected != null) {
                         for (BluetoothDevice device : mLeDevicesConnected) {
                             if (device != null && device.getAddress().equals(mDeviceAddress))
@@ -214,72 +200,49 @@ Received message
 
                         new BluetoothTask(getApplicationContext()).execute();
                     }
+                     try {
+                         countRealSteps.postDelayed(countRealStepsHandler, 3000);
 
-
-                        try {
-
-
-                            countRealSteps.postDelayed(countRealStepsHandler, 3000);
-
-                            //TODO battery indication
+                         //TODO battery indication
                           /*  Intent gattServiceIntent = new Intent(getContext(), BluetoothLeService.class);
                             getActivity().startService(gattServiceIntent);
                             getActivity().bindService(gattServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);*/
-                            //insertConnectingData1();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-
-
                     return;
                 case 4:
-
                     mProgressHUD.dismiss();
-
                     btnConnect.setText("Disconnected - Tap here to connect");
-                    try {
-                        Log.e(TAG, "connect handler disconnect");
-
-
-                        //    mBluetoothLeService.close();
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
                     return;
+                    
                 case 5:
-                   
+                  
                     try {
                         WaterSetInfo info = null;
-        //				BleHelper.SetUTC();
-        //				BleHelper.setUserSleep();
-        //				BleHelper.setUserBodyInfo();
-                            //          BleHelper.RTSwitch();
-         //				BleHelper.setAlarmPlan();
+            //			BleHelper.SetUTC();
+            //			BleHelper.setUserSleep();
+            //			BleHelper.setUserBodyInfo();
+            //          BleHelper.RTSwitch();
+            //			BleHelper.setAlarmPlan();
                         BleHelper.setWaterInfo(info);
-        //				BleHelper.setMoveInfo();
-        //				BleHelper.setRemindInfo();
-                           } catch (Exception e) {
-                               e.printStackTrace();
+            //			BleHelper.setMoveInfo();
+            //			BleHelper.setRemindInfo();
+                        } 
+                        catch (Exception e) {
+                           e.printStackTrace();
                         }
                            return;
                 case 6:
-
-                   
-                   Log.e(TAG,Array.liststep.toString());
-
+                
                    for (int i=0;i<Array.liststep.size();i++) {
                        StepData stepData=Array.liststep.get(i);
                        lstDevicesName.add(stepData.getSteptime() + " - " + stepData.getStepdata());
                    }
-
                     btnOldData.setText("DATA RECEIVED");
                     ListAdapter adapter = new ArrayAdapter<>(TrackerActivity.this, android.R.layout.simple_list_item_1, lstDevicesName);
                     listView.setAdapter(adapter);
-
-
                     return;
-
             }
         }
     };
