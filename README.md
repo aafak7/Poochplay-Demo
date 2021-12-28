@@ -52,32 +52,31 @@ Registered service in AndroidMainfest.xml
             android:name="com.amit.poochplayble.BleService"
             android:enabled="true" />
            
-Put below code in your class
+  Put below code in your class
 
        public BleService mBluetoothLeService;
-      public BroadcastReceiver broadcastReceiver;
-        public Funtion funtion = new Funtion();
+       public BroadcastReceiver broadcastReceiver;
+       public Funtion funtion = new Funtion();
        private final Handler getOldData = new Handler();
        private final Handler countRealSteps = new Handler();
  
-  
   
   in oncreate
   
      mBluetoothLeService = Constant.bleService;
    
    
-   for connect ble device.
+  for connect ble device.
    
      mBluetoothLeService.connect(mDeviceAddress);
    
    
-   Registered reciever in onstart method
+  Registered reciever in onstart method
    
       @Override
-    protected void onStart() {
-        super.onStart();
-        registerReceiver(broadcastReceiver, makeGattUpdateIntentFilter());
+      protected void onStart() {
+      super.onStart();
+      registerReceiver(broadcastReceiver, makeGattUpdateIntentFilter());
     }
 
 Initialize method in oncreate 
